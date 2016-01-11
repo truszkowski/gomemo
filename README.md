@@ -22,7 +22,7 @@ $ curl -si 127.0.0.1:1234/v1/objects/niepoprawny_klucz -XPUT -d 'przykladowe dan
 
 ```
 $ curl -si 127.0.0.1:1234/v1/objects/abc -XPUT -d 'ponad 1 MB danych...'
-413 Payload Too Large
+413 Request Entity Too Large
 ```
 
 ## `GET /v1/objects/<object_id>`
