@@ -99,3 +99,4 @@ $ curl -s 127.0.0.1:1234/v1/objcets/a1 -i
 ## Zapisywanie obiektów na dysk
 
 Serwer powinien zapisywać dane nie w pamięci, lecz na dysku aby po zrestartowaniu serwera dane były nadal dostępne.
+
