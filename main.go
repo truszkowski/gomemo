@@ -47,40 +47,43 @@ func CheckObjectId(objectId string) (string, bool) {
 }
 
 func (memoDb *MemoDb) Help(req *restful.Request, res *restful.Response) {
-	res.Write([]byte("Uzyj: `GET /v1/objects/{objects_id}` lub `PUT /v1/objects/{objects_id}`"))
+	res.Write([]byte("Uzyj:\n\t`GET /v1/objects/{objects_id}`\nlub\n\t`PUT /v1/objects/{objects_id}`\n"))
 }
 
 func (memoDb *MemoDb) Put(req *restful.Request, res *restful.Response) {
 	objectId, ok := CheckObjectId(req.PathParameter("object_id"))
 	if !ok {
 		res.WriteHeader(400)
-		fmt.Println("Niepoprawny object_id")
+		fmt.Println("Put: Niepoprawny object_id")
 		return
 	}
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
 		res.WriteHeader(500)
-		fmt.Println("Nie udany odczyt danych,", err)
+		fmt.Println("Put: Nie udany odczyt danych,", err)
 		return
 	}
 
 	if len(value) > objectLimit {
 		res.WriteHeader(413)
-		fmt.Println("Zbyt duza wartosci,", len(value), ">", objectLimit)
+		fmt.Println("Put: Zbyt duza wartosci,", len(value), ">", objectLimit)
 		return
 	}
 
 	memoDb.Lock()
 	memoDb.Objects[objectId] = Object{Value: value}
 	memoDb.Unlock()
+
+	res.WriteHeader(201)
+	fmt.Println("Put: OK")
 }
 
 func (memoDb *MemoDb) Get(req *restful.Request, res *restful.Response) {
 	objectId, ok := CheckObjectId(req.PathParameter("object_id"))
 	if !ok {
 		res.WriteHeader(400)
-		fmt.Println("Niepoprawny object_id")
+		fmt.Println("Get: Niepoprawny object_id")
 		return
 	}
 
@@ -90,11 +93,12 @@ func (memoDb *MemoDb) Get(req *restful.Request, res *restful.Response) {
 
 	if !ok {
 		res.WriteHeader(404)
-		fmt.Println("Brak objektu")
+		fmt.Println("Get: Brak objektu")
 		return
 	}
 
 	res.Write(object.Value)
+	fmt.Println("Get: OK")
 }
 
 func RunServer(listenAddress string) (*MemoDb, error) {
@@ -115,7 +119,7 @@ func RunServer(listenAddress string) (*MemoDb, error) {
 	ws.Route(ws.GET("/v1/objects/{object_id}").To(memoDb.Get))
 	container.Add(ws)
 
-	// nasłuch i obsługa zapytań
+	// nasłuch i obsługa zapytań w tle, w osobnej gorutynie
 	go func() {
 		server := http.Server{Handler: container}
 		server.Serve(listener)

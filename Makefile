@@ -11,3 +11,4 @@ test:
 
 install:
 	go install -v ./...
+
