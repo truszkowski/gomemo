@@ -1,10 +1,18 @@
 # gomemo - prosty serwer http key-value.
 
+Projekt służy wprowadzeniu w język golang, od strony pisania mikroserwisow z API http. Zaimplementowane zostały dwa proste endppointy http, służące dodawaniu danych pod wskazany klucz oraz pobieraniu danych z ponadanego klucza.
+
+W celu ćwiczenia należy zaimplementować kolejne funkcjonalności z sekcji TODO, opisać błedy jakie program posiada (jeśli).
+
+## Opis działania
+
 Serwer przechowuje w pamięci dane klucz-wartość. 
 Klucz obiektu może być dowolną wartością alfa-numeryczną (regexp: `[a-zA-Z0-9]+`) o maksymalnie 100 znakach.
-Dane obiektu mogą być dowolnymi danymi o maksymalnie 1 MB.
+Dane obiektu mogą być dowolnymi danymi o maksymalnym rozmiarze 1 MB.
 
 # Serwer HTTP API
+
+Poniżej opis aktualnie zaimplementowanych endpointow HTTP oraz ich krótki opis z przykładami.
 
 ## `PUT /v1/objects/<object_id>`
 
@@ -44,11 +52,15 @@ $ curl -si 127.0.0.1:1234/v1/objects/niema
 404 Not Found
 ```
 
-# TODO - do zrobienia
+# TODO
+
+Zadania do zrobienia.
 
 ## Obsługa błędów
 
 Zdefiniowanie odpowiednich limitów i ograniczeń kiedy serwer powinien zwracać odpowiednie błędy. 
+
+Np, co gdy będziemy chcieli dodać plik o rozmiarze 100 GB?
 
 ## `GET /v1/objects`
 
@@ -79,6 +91,10 @@ $ curl -s 127.0.0.1:1234/v1/objects/a1 -i
 404 Not Found
 ```
 
+## Dopisać test zapisu danych o niepoprawnym kluczu.
+
+W `main_test.go` dopisać test sprawdzający poprawne zachowanie serwera w przypadku podania niepoprawnych danych dla endpointu `PUT ...`.
+
 ## Automatyczne czyszczenie obiektów
 
 Serwer powinien czyścić z pamięci obiekty dodane lub pobrane po minucie.
@@ -95,6 +111,10 @@ v1
 $ curl -s 127.0.0.1:1234/v1/objcets/a1 -i
 404 Not Found
 ```
+
+## Dodanie obsługi sygnałów SIGINT i SIGTERM
+
+Jeśli program otrzyma któryś z sygnałów, powinien zamknąć socket nasłuchujący oraz zakończyć pracę.
 
 ## Zapisywanie obiektów na dysk
 
