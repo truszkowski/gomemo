@@ -1,3 +1,4 @@
+
 package main
 
 import (
@@ -14,7 +15,7 @@ import (
 )
 
 
-var def = []byte("1234")
+var def = []byte("1234 \n")
 
 
 type Object struct {
@@ -54,6 +55,19 @@ func CheckObjectId(objectId string) (string, bool) {
 
 	return "", false
 }
+
+func CheckObject(object string) (string) {
+	
+	if objectIdRegexp.MatchString(object){
+		return object
+	}
+	
+	return ""
+	
+}
+
+
+
 
 func (memoDb *MemoDb) Help(req *restful.Request, res *restful.Response) {
 	res.Write([]byte("Uzyj:\n\t`GET /v1/objects/{objects_id}`\nlub\n\t`PUT /v1/objects/{objects_id}`\n"))
@@ -110,16 +124,36 @@ func (memoDb *MemoDb) Get(req *restful.Request, res *restful.Response) {
 	fmt.Println("Get: OK")
 }
 
+
+
 func (memoDb *MemoDb) Def(req *restful.Request, res *restful.Response) {
-	objectId,ok := CheckObjectId(req.PathParameter("default_value"))
+	
+	objectId, ok := CheckObjectId(req.PathParameter("object_id"))
+	d_value := CheckObject(req.PathParameter("default_value"))
+
 	if !ok {
 		res.Write(def)
-		
-		
+		//zle id
+		return
 	}
-	def=[]byte(objectId)
-	res.Write(def)
-}
+
+	memoDb.Lock()
+	object, ok := memoDb.Objects[objectId]
+	memoDb.Unlock()
+	
+	if !ok{
+		def=[]byte(d_value)
+		res.Write(def)
+		return	
+
+	}
+	
+	res.Write(object.Value)
+	fmt.Println("Get: OK")
+}	
+	
+	
+
 
 func RunServer(listenAddress string) (*MemoDb, error) {
 	fmt.Println("Nasluch na", listenAddress)
@@ -136,6 +170,7 @@ func RunServer(listenAddress string) (*MemoDb, error) {
 	ws.Path("/")
 	ws.Route(ws.GET("/").To(memoDb.Help))
 	ws.Route(ws.PUT("/v1/objects/{object_id}").To(memoDb.Put))
+	
 	ws.Route(ws.GET("/v1/objects/{object_id}").To(memoDb.Get))
 	ws.Route(ws.GET("/v1/objects/{object_id}/default/{default_value}").To(memoDb.Def))
 	
