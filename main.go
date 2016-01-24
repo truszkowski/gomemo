@@ -151,7 +151,25 @@ func (memoDb *MemoDb) Def(req *restful.Request, res *restful.Response) {
 	fmt.Println("Get: OK")
 }	
 	
+func (memoDb *MemoDb) Rm(req *restful.Request, res *restful.Response) {
 	
+	objectId, ok := CheckObjectId(req.PathParameter("object_id"))
+	if !ok {
+		res.Write(def)
+		//zle id
+		return
+	}
+	pom:=[]byte(nil)
+	
+	memoDb.Lock()
+	memoDb.Objects[objectId] = Object{pom}
+	
+	memoDb.Unlock()
+
+	res.WriteHeader(201)
+	fmt.Println("RM: OK")
+	
+}		
 
 
 func RunServer(listenAddress string) (*MemoDb, error) {
@@ -172,7 +190,8 @@ func RunServer(listenAddress string) (*MemoDb, error) {
 	
 	ws.Route(ws.GET("/v1/objects/{object_id}").To(memoDb.Get))
 	ws.Route(ws.GET("/v1/objects/{object_id}/default/{default_value}").To(memoDb.Def))
-	
+	ws.Route(ws.GET("/v1/objects/{object_id}/rm").To(memoDb.Rm))
+	//rm-kasowanie wartości pod object_id , jęśli brak wartości : komunikat
 	
 
 	container.Add(ws)
