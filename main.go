@@ -15,7 +15,7 @@ import (
 
 
 var def = []byte("1234 \n")
-
+var r=0
 
 type Object struct {
 	Value []byte
@@ -35,6 +35,7 @@ type MemoDb struct {
 func (m *MemoDb) Print() {
 	m.Lock()
 	n := len(m.Objects)
+	n =n-r
 	m.Unlock()
 
 	fmt.Println("[Przechowuje", n, "obiektow]")
@@ -165,7 +166,7 @@ func (memoDb *MemoDb) Rm(req *restful.Request, res *restful.Response) {
 	memoDb.Objects[objectId] = Object{pom}
 	
 	memoDb.Unlock()
-
+	r=r+1
 	res.WriteHeader(201)
 	fmt.Println("RM: OK")
 	
