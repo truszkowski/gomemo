@@ -1,4 +1,3 @@
-
 package main
 
 import (
@@ -142,8 +141,8 @@ func (memoDb *MemoDb) Def(req *restful.Request, res *restful.Response) {
 	memoDb.Unlock()
 	
 	if !ok{
-		def=[]byte(d_value)
-		res.Write(def)
+		pom:=[]byte(d_value)
+		res.Write(pom)
 		return	
 
 	}
