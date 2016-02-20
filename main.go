@@ -13,9 +13,14 @@ import (
 	"github.com/emicklei/go-restful"
 )
 
+
+var def = []byte("1234 \n")
+var r=0
+
 type Object struct {
 	Value []byte
 }
+
 
 type MemoDb struct {
 	sync.Mutex
@@ -23,9 +28,14 @@ type MemoDb struct {
 	Listener net.Listener
 }
 
+
+
+
+
 func (m *MemoDb) Print() {
 	m.Lock()
 	n := len(m.Objects)
+	n =n-r
 	m.Unlock()
 
 	fmt.Println("[Przechowuje", n, "obiektow]")
@@ -45,6 +55,19 @@ func CheckObjectId(objectId string) (string, bool) {
 
 	return "", false
 }
+
+func CheckObject(object string) (string) {
+	
+	if objectIdRegexp.MatchString(object){
+		return object
+	}
+	
+	return ""
+	
+}
+
+
+
 
 func (memoDb *MemoDb) Help(req *restful.Request, res *restful.Response) {
 	res.Write([]byte("Uzyj:\n\t`GET /v1/objects/{objects_id}`\nlub\n\t`PUT /v1/objects/{objects_id}`\n"))
@@ -82,8 +105,8 @@ func (memoDb *MemoDb) Put(req *restful.Request, res *restful.Response) {
 func (memoDb *MemoDb) Get(req *restful.Request, res *restful.Response) {
 	objectId, ok := CheckObjectId(req.PathParameter("object_id"))
 	if !ok {
-		res.WriteHeader(400)
-		fmt.Println("Get: Niepoprawny object_id")
+		res.Write(def)
+		
 		return
 	}
 
@@ -92,7 +115,7 @@ func (memoDb *MemoDb) Get(req *restful.Request, res *restful.Response) {
 	memoDb.Unlock()
 
 	if !ok {
-		res.WriteHeader(404)
+		res.Write(def)
 		fmt.Println("Get: Brak objektu")
 		return
 	}
@@ -100,6 +123,55 @@ func (memoDb *MemoDb) Get(req *restful.Request, res *restful.Response) {
 	res.Write(object.Value)
 	fmt.Println("Get: OK")
 }
+
+
+
+func (memoDb *MemoDb) Def(req *restful.Request, res *restful.Response) {
+	
+	objectId, ok := CheckObjectId(req.PathParameter("object_id"))
+	d_value := CheckObject(req.PathParameter("default_value"))
+
+	if !ok {
+		res.Write(def)
+		//zle id
+		return
+	}
+
+	memoDb.Lock()
+	object, ok := memoDb.Objects[objectId]
+	memoDb.Unlock()
+	
+	if !ok{
+		pom:=[]byte(d_value)
+		res.Write(pom)
+		return	
+
+	}
+	
+	res.Write(object.Value)
+	fmt.Println("Get: OK")
+}	
+	
+func (memoDb *MemoDb) Rm(req *restful.Request, res *restful.Response) {
+	
+	objectId, ok := CheckObjectId(req.PathParameter("object_id"))
+	if !ok {
+		res.Write(def)
+		//zle id
+		return
+	}
+	pom:=[]byte(nil)
+	
+	memoDb.Lock()
+	memoDb.Objects[objectId] = Object{pom}
+	
+	memoDb.Unlock()
+	r=r+1
+	res.WriteHeader(201)
+	fmt.Println("RM: OK")
+	
+}		
+
 
 func RunServer(listenAddress string) (*MemoDb, error) {
 	fmt.Println("Nasluch na", listenAddress)
@@ -109,14 +181,20 @@ func RunServer(listenAddress string) (*MemoDb, error) {
 	}
 
 	memoDb := &MemoDb{Objects: make(map[string]Object, 0), Listener: listener}
-
+	
 	// obsługa endpointów HTTP przez https://godoc.org/github.com/emicklei/go-restful
 	container := restful.NewContainer()
 	ws := &restful.WebService{}
 	ws.Path("/")
 	ws.Route(ws.GET("/").To(memoDb.Help))
 	ws.Route(ws.PUT("/v1/objects/{object_id}").To(memoDb.Put))
+	
 	ws.Route(ws.GET("/v1/objects/{object_id}").To(memoDb.Get))
+	ws.Route(ws.GET("/v1/objects/{object_id}/default/{default_value}").To(memoDb.Def))
+	ws.Route(ws.GET("/v1/objects/{object_id}/rm").To(memoDb.Rm))
+	//rm-kasowanie wartości pod object_id , jęśli brak wartości : komunikat
+	
+
 	container.Add(ws)
 
 	// nasłuch i obsługa zapytań w tle, w osobnej gorutynie
@@ -128,8 +206,10 @@ func RunServer(listenAddress string) (*MemoDb, error) {
 	return memoDb, nil
 }
 
+
+
 func main() {
-	// Parametry
+	
 	var listenAddress string
 	flag.StringVar(&listenAddress, "listen", "127.0.0.1:1234", "adres nasłuchu dla zapytań HTTP")
 	flag.Parse()
